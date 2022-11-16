@@ -22,7 +22,7 @@ int main() {
 	regex regex("\\d*\\s\\d*");
 	cmatch match;
 
-	// Store the number of parts and dependencies
+	// Store the number of part and dependency pairs
 	while(getline(input_file, line)) {
 		if(regex_match(line.c_str(), match, regex)) {
 			int whitespace = line.find(" ");
@@ -31,8 +31,6 @@ int main() {
 			n = stoi(line.substr(0, whitespace));
 			m = stoi(line.substr(whitespace + 1, n - whitespace - 1));
 
-			// cout << parts << endl;
-			// cout << dependencies << endl;
 			break;
 		}
 	}
@@ -50,6 +48,7 @@ int main() {
 
 		if(start == true) {
 			++line_number;
+			
 			// Get basic and intermediate parts
 			int whitespace = line.find(" ");
 			int n = line.length();
