@@ -2,11 +2,19 @@
 #include <fstream>
 #include <string>
 #include <regex>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
-int main() {
+// Get substring and return as int
+int getSubstring(string line, int start, int end) 
+{
+	return stoi(line.substr(start, end));
+}
 
+int main() 
+{
 	// Open input file
 	ifstream input_file;
 
@@ -19,52 +27,85 @@ int main() {
 
 	string line = "";
 	int n, m;
-	regex regex("\\d*\\s\\d*");
+	regex pair("\\d*\\s\\d*");
 	cmatch match;
 
-	// Store the number of part and dependency pairs
+	// Store the number of dependencies and parts
 	while(getline(input_file, line)) {
-		if(regex_match(line.c_str(), match, regex)) {
+		if(regex_match(line.c_str(), match, pair)) {
 			int whitespace = line.find(" ");
-			int n = line.length();
+			int length = line.length();
 
-			n = stoi(line.substr(0, whitespace));
-			m = stoi(line.substr(whitespace + 1, n - whitespace - 1));
+			n = getSubstring(line, 0, whitespace);
+			m = getSubstring(line, whitespace + 1, length - whitespace - 1);
 
 			break;
 		}
 	}
 
-	// Store basic and intermediate parts in lookup array
-	line = "";
+	// Store sprocket cost for each part in sprocketCounts array
 	int line_number = 0;
 	bool start = false;
-	vector<int> lookup(m - 1);
+	vector<int> sprocketCounts(n);
+	regex single("\\d*");
 
-	while(getline(input_file, line) && line_number < m) {
+	while(getline(input_file, line) && line_number < n) {
 		// Iterate to two lines after the string
-		if(start != true && regex_match(line.c_str(), match, regex))
+		if(start != true && regex_match(line.c_str(), match, single))
 			start = true;
 
+		// Iterate for as long as there is a single digit on a given line
 		if(start == true) {
-			++line_number;
-			
-			// Get basic and intermediate parts
-			int whitespace = line.find(" ");
-			int n = line.length();
+			sprocketCounts[line_number] = stoi(line);
 
-			int basic_part = stoi(line.substr(0, whitespace));
-			int intermediate_part = stoi(line.substr(whitespace + 1, n - whitespace - 1));
-			
-			// Part number = index, sprocket cost = value at that index
-			lookup[basic_part] = intermediate_part;
+			++line_number;
+		}
+	}
+
+	// for(int i = 0; i < sprocketCounts.size(); ++i) {
+	// 	cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
+	// }
+
+	// --------------------------------------------------------------------------------------------------------------------------
+
+	// Return to beginning of input file
+	input_file.clear();
+	input_file.seekg(0, ios::beg);
+
+	// Store part number at that index with sprocket cost as value at index
+	line_number = 0;
+	start = false;
+	vector<int> basic_parts(n - 1);
+	regex lit("\\d*");
+
+	// Iterate to line where pairs start and then store them
+	while(getline(input_file, line) && line_number < n) {
+		if(regex_match(line.c_str(), match, lit)) {
+			start = true;
 		}
 
+		if(start == true) {
+			// Get basic and intermediate parts
+			int whitespace = line.find(" ");
+			int length = line.length();
+
+			int basic_part = getSubstring(line, 0, whitespace);
+			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
+
+			// lookupAssembly[basic_part] = intermediate_part;
+			basic_parts[basic_part] = 1;
+
+			cout << "hi";
+
+			++line_number;
+		}
 	}
 
-	for(int i = 0; i < lookup.size(); ++i) {
-		cout << "Value at index "<< i <<" : " << lookup[i] << endl;
-	}
+	// for(int i = 0; i < basic_parts.size(); ++i) {
+	// 	cout << "Index "<< i << ": " << basic_parts[i] << endl;
+	// }
+
+	input_file.close();
 
 	return 0;
 }
