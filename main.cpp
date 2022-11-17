@@ -7,12 +7,19 @@
 
 using namespace std;
 
+// Omnidroid process
+// 1. Extract n and m
+// 2. Extract pairs to 2d vector
+// 3. Extract singles to 1d vector
+// 4. Loop through 2d vector and reference 1d vector to calculate sprocket cost
+
 // Get substring and return as int
 int getSubstring(string line, int start, int end) 
 {
 	return stoi(line.substr(start, end));
 }
 
+// Create 2d vector out of int pairs
 vector<vector<int>> getPairs(ifstream& file, int m, int n) 
 {
 	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
@@ -50,15 +57,23 @@ vector<vector<int>> getPairs(ifstream& file, int m, int n)
 	return result;
 }
 
+// Index = part number, value @ index = part cost
 vector<int> getSingles(ifstream& file, int n)
 {
 	// Iterate through single integers - Store sprocket cost for each part in sprocketCounts array
 	string line = "";
 	int line_number = 0;
-	bool start = false;
+	bool start = false, first_line = true;
 	vector<int> result(n);
 	cmatch match;
-	regex single("\\d*");
+	regex single("\\d*"), pair("\\d\\s\\d");
+
+	// Iterate past first single digit since it has nothing to do with omnidroid assembly or else regex will match it
+	while(getline(file, line)) {
+		// Iterate to single ints
+		if(start != true && regex_match(line.c_str(), match, pair))
+			break;
+	}
 
 	while(getline(file, line) && line_number < n) {
 		// Iterate to single ints
@@ -71,6 +86,14 @@ vector<int> getSingles(ifstream& file, int n)
 			++line_number;
 		}
 	}
+
+	return result;
+}
+
+// Actual process of constructing robot from extracted pairs and singles
+int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
+{
+	int result = 0;
 
 	return result;
 }
@@ -122,14 +145,17 @@ int main()
 		cout << endl;
 	}
 
+	// Seek to beginning of input file
+	input_file.clear();
+	input_file.seekg(0);
+
 	vector<int> sprocketCounts = getSingles(input_file, n);
 
 	// Print singles
 	cout << endl;
 	cout << "Contructed from single ints: " << endl;
-	for(int i = 0; i < sprocketCounts.size(); ++i) {
+	for(int i = 0; i < sprocketCounts.size(); ++i)
 		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
-	}
 
 	input_file.close();
 
