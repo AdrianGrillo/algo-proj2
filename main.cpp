@@ -78,32 +78,38 @@ int main()
 	vector<int> basic_parts(n - 1);
 	regex lit("\\d*");
 
-	// Iterate to line where pairs start and then store them
-	while(getline(input_file, line) && line_number < n) {
-		if(regex_match(line.c_str(), match, lit)) {
+	cout << "hey" << endl;
+
+	// Iterate to line where singles start and store them
+	while(getline(input_file, line)) {
+		if(start != true && regex_match(line.c_str(), match, lit)) {
 			start = true;
 		}
 
+		cout << start <<endl;
+
 		if(start == true) {
+			cout << "hi" << endl;
 			// Get basic and intermediate parts
 			int whitespace = line.find(" ");
 			int length = line.length();
 
 			int basic_part = getSubstring(line, 0, whitespace);
-			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
+			// int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
 
 			// lookupAssembly[basic_part] = intermediate_part;
+
 			basic_parts[basic_part] = 1;
 
-			cout << "hi";
+			cout << basic_part;
 
 			++line_number;
 		}
 	}
 
-	// for(int i = 0; i < basic_parts.size(); ++i) {
-	// 	cout << "Index "<< i << ": " << basic_parts[i] << endl;
-	// }
+	for(int i = 0; i < basic_parts.size(); ++i) {
+		cout << "Index "<< i << ": " << basic_parts[i] << endl;
+	}
 
 	input_file.close();
 
