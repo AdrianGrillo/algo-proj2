@@ -36,10 +36,8 @@ vector<vector<int>> getPairs(ifstream& file, int m, int n)
 		if(regex_match(line.c_str(), match, regex("\\d")))
 			break;
 
-		if(start != true && regex_match(line.c_str(), match, pair)) {
+		if(start != true && regex_match(line.c_str(), match, pair))
 			start = true;
-			continue;
-		}
 
 		if(start == true) {
 			// Get basic and intermediate parts
@@ -94,6 +92,19 @@ vector<int> getSingles(ifstream& file, int n)
 int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 {
 	int result = 0;
+
+	// Loop through singles
+	for(int i = 0; i < part_cost.size(); ++i)
+		result += part_cost[i];
+	
+	// Loop through pairs
+	for(int i = 0; i < assembly.size(); ++i) {
+		// If the vector at assembly[i] has more than one index, add part_cost[i] to result for each index at assembly[i]
+		if(assembly[i].size() > 1) {
+			for(int j = 0; j < assembly[i].size(); ++j)
+				result += part_cost[i];
+		}
+	}
 
 	return result;
 }
@@ -156,6 +167,10 @@ int main()
 	cout << "Contructed from single ints: " << endl;
 	for(int i = 0; i < sprocketCounts.size(); ++i)
 		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
+
+	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
+	cout << endl;
+	cout << "Total omnidroid cost: " << omnidroidCost << endl;
 
 	input_file.close();
 
