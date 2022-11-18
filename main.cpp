@@ -92,19 +92,21 @@ vector<int> getSingles(ifstream& file, int n)
 int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 {
 	int result = 0;
+	vector<int> dependencies(assembly.size());
+
+	// Sum dependencies
+	for(int i = 0; i < assembly.size(); ++i)
+		dependencies[i] = assembly[i].size();
 
 	// Loop through singles
 	for(int i = 0; i < part_cost.size(); ++i)
 		result += part_cost[i];
 	
 	// Loop through pairs
-	for(int i = 0; i < assembly.size(); ++i) {
+	for(int i = 0; i < assembly.size(); ++i) 
 		// If the vector at assembly[i] has more than one index, add part_cost[i] to result for each index at assembly[i]
-		if(assembly[i].size() > 1) {
-			for(int j = 0; j < assembly[i].size(); ++j)
-				result += part_cost[i];
-		}
-	}
+		if(assembly[i].size() > 1)
+			result += dependencies[i] * part_cost[i];
 
 	return result;
 }
