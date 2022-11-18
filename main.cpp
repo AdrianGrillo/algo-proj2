@@ -61,7 +61,7 @@ vector<int> getSingles(ifstream& file, int n)
 	// Iterate through single integers - Store sprocket cost for each part in sprocketCounts array
 	string line = "";
 	int line_number = 0;
-	bool start = false, first_line = true;
+	bool start = false;
 	vector<int> result(n);
 	cmatch match;
 	regex single("\\d*"), pair("\\d\\s\\d");
@@ -152,9 +152,7 @@ int main()
 	{
 		cout << "Index " << i << ": ";
 		for(int j = 0; j < assembly_list[i].size(); j++) 
-		{
 			cout << assembly_list[i][j] << " ";
-		}
 		cout << endl;
 	}
 
