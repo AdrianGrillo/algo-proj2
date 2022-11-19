@@ -21,14 +21,16 @@ int getSubstring(string line, int start, int end)
 	return stoi(line.substr(start, end));
 }
 
+
+
 // Create 2d vector out of int pairs
-vector<vector<int>> getPairs(ifstream& file, int m, int n) 
+vector<vector<int>> getPairs(ifstream& file, int m) 
 {
 	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
 	string line = "";
 	int line_number = 0;
 	bool start = false;
-	vector<vector<int>> result(n - 1);
+	vector<vector<int>> result(m - 1);
 	cmatch match;
 	regex pair("\\d\\s\\d");
 
@@ -113,10 +115,71 @@ int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 	return result;
 }
 
-// int wrapperROBOT(/*the input array, n*/){
-// 	//initialize data structure with a sentinel value of -1
-// 	return robotomaton(/*input array, initialized data struct*/);
-// }
+int Omnidroid(ifstream &input){
+	string line = "";
+	int n, m;
+	regex pair("\\d*\\s\\d*");
+	cmatch match;
+	// Get n and m for omnidroid
+	while(getline(input, line)) 
+	{
+		cout << line.c_str() << endl;
+		if(regex_match(line.c_str(), match, pair)) 
+		{
+			int whitespace = line.find(" ");
+			int length = line.length();
+
+			n = getSubstring(line, 0, whitespace);
+			m = getSubstring(line, whitespace + 1, length - whitespace - 1);
+
+			break;
+		}
+	}
+
+	vector<vector<int>> assembly_list = getPairs(input, m, n);
+
+	// Print 2d vector for debugging
+	cout << "Constructed from int pairs" << endl;
+	for(int i = 0; i < assembly_list.size(); ++i) 
+	{
+		cout << "Index " << i << ": ";
+		for(int j = 0; j < assembly_list[i].size(); j++) 
+			cout << assembly_list[i][j] << " ";
+		cout << endl;
+	}
+
+	// Seek to beginning of input file
+	input.clear();
+	input.seekg(0);
+
+	vector<int> sprocketCounts = getSingles(input, n);
+
+	// Print singles
+	cout << endl;
+	cout << "Contructed from single ints: " << endl;
+	for(int i = 0; i < sprocketCounts.size(); ++i)
+		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
+
+	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
+	cout << endl;
+	cout << "Total omnidroid cost: " << omnidroidCost << endl;
+	return omnidroidCost;
+
+}
+
+int wrapperROBOT(ifstream &input){
+	string line= "";
+	stringstream stages;
+	int numStages;
+	getline(input, line);
+	stages << line;
+	stages >> numStages;
+	cout << "numStahes: " << numStages << endl;
+	vector<vector<int>> assembly_list = getPairs(input, numStages, numStages)
+	//initialize data structure with a sentinel value of -1
+		
+	return robotomaton(/*input array, initialized data struct*/);
+}
 
 // int robotomaton () {
 // 	if (true/*datastruct[n] > -1*/) {
@@ -151,9 +214,8 @@ int main()
 	string omni = "omnidroid";
 	string robo = "robotomaton";
 	stringstream robotnum;
-	int n, m, robots;
-	regex pair("\\d*\\s\\d*");
-	cmatch match;
+	int robots;
+
 
 	//get how many robots we gotta make
 	getline(input_file, line);
@@ -167,6 +229,7 @@ int main()
 		if (omni.compare(line) == 0) {
 			cout << "omnidroid" << endl;
 			//call omnidroid funct
+			Omnidroid(input_file);
 		} else if(robo.compare(line) == 0) {
 			cout << "robotomaton" << endl;
 			//call robotomaton funct
@@ -175,51 +238,6 @@ int main()
 
 	}
 
-/*
-	// Get n and m for omnidroid
-	while(getline(input_file, line)) 
-	{
-		cout << line.c_str() << endl;
-		if(regex_match(line.c_str(), match, pair)) 
-		{
-			int whitespace = line.find(" ");
-			int length = line.length();
-
-			n = getSubstring(line, 0, whitespace);
-			m = getSubstring(line, whitespace + 1, length - whitespace - 1);
-
-			break;
-		}
-	}
-
-	vector<vector<int>> assembly_list = getPairs(input_file, m, n);
-
-	// Print 2d vector for debugging
-	cout << "Constructed from int pairs" << endl;
-	for(int i = 0; i < assembly_list.size(); ++i) 
-	{
-		cout << "Index " << i << ": ";
-		for(int j = 0; j < assembly_list[i].size(); j++) 
-			cout << assembly_list[i][j] << " ";
-		cout << endl;
-	}
-
-	// Seek to beginning of input file
-	input_file.clear();
-	input_file.seekg(0);
-
-	vector<int> sprocketCounts = getSingles(input_file, n);
-
-	// Print singles
-	cout << endl;
-	cout << "Contructed from single ints: " << endl;
-	for(int i = 0; i < sprocketCounts.size(); ++i)
-		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
-
-	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
-	cout << endl;
-	cout << "Total omnidroid cost: " << omnidroidCost << endl;
-*/
 	input_file.close();
 
 	return 0;
