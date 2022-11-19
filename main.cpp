@@ -113,18 +113,34 @@ int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 }
 
 
-int robotomatonWrapper(){
-	vector<tuple <int, int> > parts;
-	
 
+
+int robotomatonWrapper(int numStages, vector<vector<int>> assembly){
+	vector<tuple <int, int> > parts;
+	vector<vector<int>> costs;
+
+	for(int i = 0; i < numStages; i++){
+		costs[get<0>(parts[i])][get<1>(parts[i])] = -1;
+	}
+
+	return constructRobotomaton(numStages, parts, costs);
 
 }
 
 
-int constructRobotomaton(){
-	int result = 0;
+int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<vector<int>> lookupTable){
 	
+	if (lookupTable[get<0>(partList[n])][get<1>(partList[n])] = -1){
 
+		lookupTable[get<0>(partList[n])][get<1>(partList[n])] += get<0>(partList[n]);
+
+		for(int i = 0; i < n; i ++){
+			lookupTable[get<0>(partList[n+i])][get<1>(partList[n+i])] += constructRobotomaton(n+1, partList, lookupTable);
+		}
+	}
+	
+	return lookupTable[get<0>(partList[n])][get<1>(partList[n])];
+	
 }
 
 int main() 
