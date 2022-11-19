@@ -150,6 +150,21 @@ vector<tuple<int, int>> robotomatonPairs(ifstream& file, int m)
 	return result;
 }
 
+int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<vector<int>> lookupTable){
+	
+	if (lookupTable[get<0>(partList[n])][get<1>(partList[n])] == -1){
+
+		lookupTable[get<0>(partList[n])][get<1>(partList[n])] += get<0>(partList[n]);
+
+		for(int i = 0; i < n; i ++){
+			lookupTable[get<0>(partList[n-i])][get<1>(partList[n-i])] += constructRobotomaton(n+i, partList, lookupTable);
+		}
+	}
+	
+	return lookupTable[get<0>(partList[n])][get<1>(partList[n])];
+
+}
+
 int robotomatonWrapper(int numStages, vector<vector<int>> costs){
 	vector<tuple <int, int> > parts;
 
@@ -162,20 +177,7 @@ int robotomatonWrapper(int numStages, vector<vector<int>> costs){
 }
 
 
-int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<vector<int>> lookupTable){
-	
-	if (lookupTable[get<0>(partList[n])][get<1>(partList[n])] = -1){
 
-		lookupTable[get<0>(partList[n])][get<1>(partList[n])] += get<0>(partList[n]);
-
-		for(int i = 0; i < n; i ++){
-			lookupTable[get<0>(partList[n-i])][get<1>(partList[n-i])] += constructRobotomaton(n+i, partList, lookupTable);
-		}
-	}
-	
-	return lookupTable[get<0>(partList[n])][get<1>(partList[n])];
-
-}
 
 int main() 
 {
