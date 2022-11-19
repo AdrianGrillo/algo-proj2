@@ -112,12 +112,44 @@ int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 	return result;
 }
 
+vector<tuple<int, int>> robotomatonPairs(ifstream& file, int m) 
+{
+	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
+	string line = "";
+	int line_number = 0;
+	bool start = false;
+	vector<tuple<int, int>> result(m-1);
+	cmatch match;
+	regex pair("\\d\\s\\d");
 
+	// Iterate to line where n and m are declared and start on next line
+	while(getline(file, line) && line_number < m) {
+		// If buffer matches a single, skip
+		if(regex_match(line.c_str(), match, regex("\\d")))
+			continue; 
 
+		if(start != true && regex_match(line.c_str(), match, pair))
+			start = true;
 
-int robotomatonWrapper(int numStages, vector<vector<int>> assembly){
+		if(start == true) {
+			// Get basic and intermediate parts
+			int whitespace = line.find(" ");
+			int length = line.length();
+
+			int cost = getSubstring(line, 0, whitespace);
+			int stage = getSubstring(line, whitespace + 1, length - whitespace - 1);
+			
+			result.emplace_back(cost, stage);
+
+			++line_number;
+		}
+	}
+
+	return result;
+}
+
+int robotomatonWrapper(int numStages, vector<vector<int>> costs){
 	vector<tuple <int, int> > parts;
-	vector<vector<int>> costs;
 
 	for(int i = 0; i < numStages; i++){
 		costs[get<0>(parts[i])][get<1>(parts[i])] = -1;
@@ -135,12 +167,12 @@ int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<vecto
 		lookupTable[get<0>(partList[n])][get<1>(partList[n])] += get<0>(partList[n]);
 
 		for(int i = 0; i < n; i ++){
-			lookupTable[get<0>(partList[n+i])][get<1>(partList[n+i])] += constructRobotomaton(n+1, partList, lookupTable);
+			lookupTable[get<0>(partList[n-i])][get<1>(partList[n-i])] += constructRobotomaton(n+i, partList, lookupTable);
 		}
 	}
 	
 	return lookupTable[get<0>(partList[n])][get<1>(partList[n])];
-	
+
 }
 
 int main() 
