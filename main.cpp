@@ -13,6 +13,10 @@ using namespace std;
 // 3. Extract singles to 1d vector
 // 4. Loop through 2d vector and reference 1d vector to calculate sprocket cost
 
+// Global dependency cost table
+vector<int> basic_part_cost
+vector<int> intermediate_part_cost;
+
 // Get substring and return as int
 int getSubstring(string line, int start, int end) 
 {
@@ -20,35 +24,46 @@ int getSubstring(string line, int start, int end)
 }
 
 // Create 2d vector out of int pairs
-vector<vector<int>> getPairs(ifstream& file, int m, int n) 
+vector<vector<int>> constructLookupTable(ifstream& file, int m, int n) 
 {
 	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
 	string line = "";
 	int line_number = 0;
 	bool start = false;
-	vector<vector<int>> result(n - 1);
+	vector<vector<int>> result(n);
 	cmatch match;
 	regex pair("\\d\\s\\d");
 
-	// Iterate to line where n and m are declared and start on next line
-	while(getline(file, line) && line_number < m) {
-		// If buffer matches a single, break
-		if(regex_match(line.c_str(), match, regex("\\d")))
-			break;
+	// Initialize nested vectors to -1 and global lookup table to 0
+	for(int i = 0; i < result.size(); ++i){
+		result[i].push_back(-1);
+		dependency_cost.push_back(0);
+	}
 
+	// Iterate to line where n and m are declared and start on next line
+	while(getline(file, line)) {
 		if(start != true && regex_match(line.c_str(), match, pair))
 			start = true;
 
-		if(start == true) {
+		if(start == true) 
+		{
+			++line_number;
+			if(line_number > m)
+				break;
+
 			// Get basic and intermediate parts
 			int whitespace = line.find(" ");
 			int length = line.length();
 
 			int basic_part = getSubstring(line, 0, whitespace);
 			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
-			
-			result[basic_part].push_back(intermediate_part);
-			++line_number;
+
+			// If -1 is at the location that a dependency shoud go, clear it before pushing the dependency
+			if(result[intermediate_part][0] == -1)
+				result[intermediate_part].clear();
+
+			result[intermediate_part].push_back(basic_part);
+			// dependency_cost[intermediate_part] += cost_lookup[basic_part];
 		}
 	}
 
@@ -67,13 +82,15 @@ vector<int> getSingles(ifstream& file, int n)
 	regex single("\\d*"), pair("\\d\\s\\d");
 
 	// Iterate past first single digit since it has nothing to do with omnidroid assembly or else regex will match it
-	while(getline(file, line)) {
+	while(getline(file, line)) 
+	{
 		// Iterate to single ints
 		if(start != true && regex_match(line.c_str(), match, pair))
 			break;
 	}
 
-	while(getline(file, line) && line_number < n) {
+	while(getline(file, line) && line_number < n) 
+	{
 		// Iterate to single ints
 		if(start != true && regex_match(line.c_str(), match, single))
 			start = true;
@@ -144,7 +161,7 @@ int main()
 		}
 	}
 
-	vector<vector<int>> assembly_list = getPairs(input_file, m, n);
+	vector<vector<int>> assembly_list = constructLookupTable(input_file, m, n);
 
 	// Print 2d vector for debugging
 	cout << "Constructed from int pairs" << endl;
