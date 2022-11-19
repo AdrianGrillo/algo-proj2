@@ -4,6 +4,7 @@
 #include <regex>
 #include <utility>
 #include <vector>
+#include <tuple>
 
 using namespace std;
 
@@ -109,6 +110,21 @@ int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 			result += dependencies[i] * part_cost[i];
 
 	return result;
+}
+
+
+int robotomatonWrapper(){
+	vector<tuple <int, int> > parts;
+	
+
+
+}
+
+
+int constructRobotomaton(){
+	int result = 0;
+	
+
 }
 
 int main() 
