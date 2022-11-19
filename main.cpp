@@ -14,8 +14,7 @@ using namespace std;
 // 4. Loop through 2d vector and reference 1d vector to calculate sprocket cost
 
 // Global dependency cost table
-vector<int> basic_part_cost
-vector<int> intermediate_part_cost;
+vector<int> dependency_cost_total;
 
 // Get substring and return as int
 int getSubstring(string line, int start, int end) 
@@ -24,7 +23,7 @@ int getSubstring(string line, int start, int end)
 }
 
 // Create 2d vector out of int pairs
-vector<vector<int>> constructLookupTable(ifstream& file, int m, int n) 
+vector<vector<int>> constructLookupTable(ifstream& file, vector<int> sprocketCounts, int m, int n) 
 {
 	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
 	string line = "";
@@ -36,8 +35,9 @@ vector<vector<int>> constructLookupTable(ifstream& file, int m, int n)
 
 	// Initialize nested vectors to -1 and global lookup table to 0
 	for(int i = 0; i < result.size(); ++i){
+		// -1 indicates that part i isn't dependent on any other part
 		result[i].push_back(-1);
-		dependency_cost.push_back(0);
+		dependency_cost_total.push_back(0);
 	}
 
 	// Iterate to line where n and m are declared and start on next line
@@ -63,9 +63,12 @@ vector<vector<int>> constructLookupTable(ifstream& file, int m, int n)
 				result[intermediate_part].clear();
 
 			result[intermediate_part].push_back(basic_part);
-			// dependency_cost[intermediate_part] += cost_lookup[basic_part];
+			dependency_cost_total[intermediate_part] += sprocketCounts[basic_part];
 		}
 	}
+
+	for(int i = 0; i < dependency_cost_total.size(); ++i)
+		cout << dependency_cost_total[i] << endl;
 
 	return result;
 }
@@ -108,23 +111,14 @@ vector<int> getSingles(ifstream& file, int n)
 // Actual process of constructing robot from extracted pairs and singles
 int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 {
-	int result = 0;
-	vector<int> dependencies(assembly.size());
+	int result = 0, n = assembly.size();
 
-	// Sum dependencies
-	for(int i = 0; i < assembly.size(); ++i)
-		dependencies[i] = assembly[i].size();
+	// Iterate through last index of dependency_cost_total and compute omnidroid cost
+	for(int i = 0; i < assembly[n - 1].size(); ++i)
+		result += dependency_cost_total[assembly[n - 1][i]] + part_cost[assembly[n - 1][i]];
 
-	// Loop through singles
-	for(int i = 0; i < part_cost.size(); ++i)
-		result += part_cost[i];
+	result += part_cost[n - 1];
 	
-	// Loop through pairs
-	for(int i = 0; i < assembly.size(); ++i) 
-		// If the vector at assembly[i] has more than one index, add part_cost[i] to result for each index at assembly[i]
-		if(assembly[i].size() > 1)
-			result += dependencies[i] * part_cost[i];
-
 	return result;
 }
 
@@ -160,8 +154,13 @@ int main()
 			break;
 		}
 	}
+	vector<int> sprocketCounts = getSingles(input_file, n);
 
-	vector<vector<int>> assembly_list = constructLookupTable(input_file, m, n);
+	// Seek to beginning of input file
+	input_file.clear();
+	input_file.seekg(0);
+
+	vector<vector<int>> assembly_list = constructLookupTable(input_file, sprocketCounts, m, n);
 
 	// Print 2d vector for debugging
 	cout << "Constructed from int pairs" << endl;
@@ -173,11 +172,7 @@ int main()
 		cout << endl;
 	}
 
-	// Seek to beginning of input file
-	input_file.clear();
-	input_file.seekg(0);
 
-	vector<int> sprocketCounts = getSingles(input_file, n);
 
 	// Print singles
 	cout << endl;
