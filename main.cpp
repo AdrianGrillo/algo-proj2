@@ -22,8 +22,30 @@ int getSubstring(string line, int start, int end)
 	return stoi(line.substr(start, end));
 }
 
+void getPartsAndDependencies(ifstream& file, int* n, int* m)
+{
+	string line = "";
+	regex pair("\\d*\\s\\d*");
+	cmatch match;
+
+	// Get n and m
+	while(getline(file, line)) 
+	{
+		if(regex_match(line.c_str(), match, pair)) 
+		{
+			int whitespace = line.find(" ");
+			int length = line.length();
+
+			*n = getSubstring(line, 0, whitespace);
+			*m = getSubstring(line, whitespace + 1, length - whitespace - 1);
+
+			break;
+		}
+	}
+}
+
 // Create 2d vector out of int pairs
-vector<vector<int>> constructLookupTable(ifstream& file, vector<int> sprocketCounts, int m, int n) 
+vector<vector<int>> constructAssemblyList(ifstream& file, vector<int> part_cost_individual, int m, int n) 
 {
 	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
 	string line = "";
@@ -63,7 +85,7 @@ vector<vector<int>> constructLookupTable(ifstream& file, vector<int> sprocketCou
 				result[intermediate_part].clear();
 
 			result[intermediate_part].push_back(basic_part);
-			dependency_cost_total[intermediate_part] += sprocketCounts[basic_part];
+			dependency_cost_total[intermediate_part] += part_cost_individual[basic_part];
 		}
 	}
 
@@ -76,7 +98,7 @@ vector<vector<int>> constructLookupTable(ifstream& file, vector<int> sprocketCou
 // Index = part number, value @ index = part cost
 vector<int> getSingles(ifstream& file, int n)
 {
-	// Iterate through single integers - Store sprocket cost for each part in sprocketCounts array
+	// Iterate through single integers - Store sprocket cost for each part in part_cost_individual array
 	string line = "";
 	int line_number = 0;
 	bool start = false;
@@ -109,15 +131,15 @@ vector<int> getSingles(ifstream& file, int n)
 }
 
 // Actual process of constructing robot from extracted pairs and singles
-int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
+int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost_individual)
 {
 	int result = 0, n = assembly.size();
 
 	// Iterate through last index of dependency_cost_total and compute omnidroid cost
 	for(int i = 0; i < assembly[n - 1].size(); ++i)
-		result += dependency_cost_total[assembly[n - 1][i]] + part_cost[assembly[n - 1][i]];
+		result += dependency_cost_total[assembly[n - 1][i]] + part_cost_individual[assembly[n - 1][i]];
 
-	result += part_cost[n - 1];
+	result += part_cost_individual[n - 1];
 	
 	return result;
 }
@@ -135,32 +157,17 @@ int main()
 		return 1;
 	}
 
-	string line = "";
 	int n, m;
-	regex pair("\\d*\\s\\d*");
-	cmatch match;
 
-	// Get n and m
-	while(getline(input_file, line)) 
-	{
-		if(regex_match(line.c_str(), match, pair)) 
-		{
-			int whitespace = line.find(" ");
-			int length = line.length();
+	getPartsAndDependencies(input_file, &n, &m);
 
-			n = getSubstring(line, 0, whitespace);
-			m = getSubstring(line, whitespace + 1, length - whitespace - 1);
-
-			break;
-		}
-	}
-	vector<int> sprocketCounts = getSingles(input_file, n);
+	vector<int> part_cost_individual = getSingles(input_file, n);
 
 	// Seek to beginning of input file
 	input_file.clear();
 	input_file.seekg(0);
 
-	vector<vector<int>> assembly_list = constructLookupTable(input_file, sprocketCounts, m, n);
+	vector<vector<int>> assembly_list = constructAssemblyList(input_file, part_cost_individual, m, n);
 
 	// Print 2d vector for debugging
 	cout << "Constructed from int pairs" << endl;
@@ -172,15 +179,13 @@ int main()
 		cout << endl;
 	}
 
-
-
 	// Print singles
 	cout << endl;
 	cout << "Contructed from single ints: " << endl;
-	for(int i = 0; i < sprocketCounts.size(); ++i)
-		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
+	for(int i = 0; i < part_cost_individual.size(); ++i)
+		cout << "Index "<< i << ": " << part_cost_individual[i] << endl;
 
-	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
+	int omnidroidCost = constructOmnidroid(assembly_list, part_cost_individual);
 	cout << endl;
 	cout << "Total omnidroid cost: " << omnidroidCost << endl;
 
