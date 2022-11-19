@@ -1,9 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <regex>
 #include <utility>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
@@ -111,6 +113,26 @@ int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
 	return result;
 }
 
+// int wrapperROBOT(/*the input array, n*/){
+// 	//initialize data structure with a sentinel value of -1
+// 	return robotomaton(/*input array, initialized data struct*/);
+// }
+
+// int robotomaton () {
+// 	if (true/*datastruct[n] > -1*/) {
+
+// 	} else if (true/* next points to null*/)
+// 	{
+// 		/* code */;
+// 	} else {
+// 		/* code */;
+// 	}
+// 	return 0 /*datastruct[n]*/;
+	
+// }
+
+
+
 int main() 
 {
 	// Open input file
@@ -124,14 +146,40 @@ int main()
 		return 1;
 	}
 
+	
 	string line = "";
-	int n, m;
+	string omni = "omnidroid";
+	string robo = "robotomaton";
+	stringstream robotnum;
+	int n, m, robots;
 	regex pair("\\d*\\s\\d*");
 	cmatch match;
 
-	// Get n and m
+	//get how many robots we gotta make
+	getline(input_file, line);
+	robotnum << line;
+	robotnum >> robots;
+	cout << "robots: " << robots << endl;
+
+	//making the required number of robots
+	for(int i = 0; i < robots; ++i){
+		getline(input_file, line);
+		if (omni.compare(line) == 0) {
+			cout << "omnidroid" << endl;
+			//call omnidroid funct
+		} else if(robo.compare(line) == 0) {
+			cout << "robotomaton" << endl;
+			//call robotomaton funct
+
+		}
+
+	}
+
+/*
+	// Get n and m for omnidroid
 	while(getline(input_file, line)) 
 	{
+		cout << line.c_str() << endl;
 		if(regex_match(line.c_str(), match, pair)) 
 		{
 			int whitespace = line.find(" ");
@@ -171,7 +219,7 @@ int main()
 	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
 	cout << endl;
 	cout << "Total omnidroid cost: " << omnidroidCost << endl;
-
+*/
 	input_file.close();
 
 	return 0;
