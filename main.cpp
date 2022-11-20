@@ -11,13 +11,7 @@ using namespace std;
 // Global for total number of robots in file
 int totalRobots;
 
-// Get substring and return as int
-int getSubstring(string line, int start, int end) 
-{
-	return stoi(line.substr(start, end));
-}
-
-void getPartsAndDependencies(ifstream& file, int* n, int* m)
+void getParts(ifstream& file, int* n)
 {
 	string line = "";
 
@@ -26,27 +20,21 @@ void getPartsAndDependencies(ifstream& file, int* n, int* m)
         if(!totalRobots)
             totalRobots = stoi(line);
 
-        cout << "Total robots: " << totalRobots << endl;
 		if(line.length() >= 3 && line != "omnidroid" && line != "robotomaton") 
 		{
 			int whitespace = line.find(" ");
-			int length = line.length();
-
-			*n = getSubstring(line, 0, whitespace);
-			*m = getSubstring(line, whitespace + 1, length - whitespace - 1);
+			*n = stoi(line.substr(0, whitespace));
 
 			break;
 		}
 	}
 }
 
-void getAssemblyAndPartsList(ifstream& file, int n, int m,  vector<int>& part_cost, vector<vector<int>>& assembly_list) 
+void getAssemblyAndPartsList(ifstream& file, int n,  vector<int>& part_cost, vector<vector<int>>& assembly_list) 
 {
     // Initialize each vector at result[i] -1, this indicates that part #i isn't dependent on any other part
-	for(int i = 0; i < assembly_list.size(); ++i){
+	for(int i = 0; i < assembly_list.size(); ++i)
 		assembly_list[i].push_back(-1);
-		// dependency_cost_total.push_back(0);
-	}
 
     string line = "";
 	int line_number = 0;
@@ -59,41 +47,44 @@ void getAssemblyAndPartsList(ifstream& file, int n, int m,  vector<int>& part_co
         int whitespace = line.find(" ");
         int length = line.length();
 
-        int basic_part = getSubstring(line, 0, whitespace);
-        int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
+        int basic_part = stoi(line.substr(0, whitespace));;
+        int intermediate_part = stoi(line.substr(whitespace + 1, length - whitespace + 1));
 
         // If -1 is at the location that a dependency shoud go, clear it before pushing the dependency
         if(assembly_list[intermediate_part][0] == -1)
             assembly_list[intermediate_part].clear();
 
         assembly_list[intermediate_part].push_back(basic_part);
-        // dependency_cost_total[intermediate_part] += part_cost_individual[basic_part];
         } 
         else
         {
-            ++line_number;
             part_cost[line_number] = stoi(line);
+            ++line_number;
         }
 	}
 }
 
-// vector<int> getPartCost(ifstream& file, int n)
-// {
-// 	string line = "";
-// 	int line_number = 0;
-// 	vector<int> result(n);
+void getDependencyCost(vector<vector<int>>& assembly_list, vector<int>& part_cost, vector<int>& dependency_cost)
+{
+    // Initialize depency_cost vector to 0
+    for(int i = 0; i < dependency_cost.size(); ++i)
+        dependency_cost.push_back(0);
 
-// 	while(getline(file, line) && line_number < n) 
-// 	{
-//         if(line.find(" ") == -1 && line != "omnidroid" && line != "robotomaton" && line != "")
-//         {
-//             result[line_number] = stoi(line);
-//             ++line_number;
-//         }
-// 	}
 
-// 	return result;
-// }
+    for(int i = 0; i < assembly_list.size(); ++i) 
+    {
+        cout << "fucking hello";
+        if(assembly_list[i][0] != -1) 
+        {
+            for(int j = 0; j < assembly_list[i].size(); ++j)
+                dependency_cost[i] += part_cost[assembly_list[i][j]];
+                cout << "hi";
+        }
+    }
+
+    for(int i = 0; i < dependency_cost.size(); ++i)
+        cout << dependency_cost[i] << endl;
+}
 
 int main() 
 {
@@ -107,23 +98,28 @@ int main()
 		return 1;
 	}
 
-    // Get n and m
-	int n, m;
-	getPartsAndDependencies(input_file, &n, &m);
+    // Get n
+	int n;
+	getParts(input_file, &n);
 
+    // Index = part number, value @ index = part cost
     vector<int> part_cost(n);
+    // Index = part number, ints @ index = dependencies
     vector<vector<int>> assembly_list(n);
-    getAssemblyAndPartsList(input_file, n, m, part_cost, assembly_list);
+    getAssemblyAndPartsList(input_file, n, part_cost, assembly_list);
+    // Index = part number, value @ index = cost of all dependencies
+    vector<int> dependency_cost;
+    getDependencyCost(assembly_list, part_cost, dependency_cost);
 
-	for(int i = 0; i < assembly_list.size(); ++i) 
-	{
-		cout << "Index " << i << ": ";
-		for(int j = 0; j < assembly_list[i].size(); j++) 
-			cout << assembly_list[i][j] << " ";
-		cout << endl;
-	}
+	// for(int i = 0; i < assembly_list.size(); ++i) 
+	// {
+	// 	cout << "Index " << i << ": ";
+	// 	for(int j = 0; j < assembly_list[i].size(); j++) 
+	// 		cout << assembly_list[i][j] << " ";
+	// 	cout << endl;
+	// }
 
 
-    for(int i = 0; i < part_cost.size(); ++i)
-		cout << "Index "<< i << ": " << part_cost[i] << endl;
+    // for(int i = 0; i < part_cost.size(); ++i)
+	// 	cout << "Index "<< i << ": " << part_cost[i] << endl;
 }
