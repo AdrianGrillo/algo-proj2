@@ -67,23 +67,30 @@ void getAssemblyAndPartsList(ifstream& file, int n,  vector<int>& part_cost, vec
 void getDependencyCost(vector<vector<int>>& assembly_list, vector<int>& part_cost, vector<int>& dependency_cost)
 {
     // Initialize depency_cost vector to 0
-    for(int i = 0; i < dependency_cost.size(); ++i)
+    for(int i = 0; i < assembly_list.size(); ++i)
         dependency_cost.push_back(0);
-
 
     for(int i = 0; i < assembly_list.size(); ++i) 
     {
-        cout << "fucking hello";
         if(assembly_list[i][0] != -1) 
         {
             for(int j = 0; j < assembly_list[i].size(); ++j)
                 dependency_cost[i] += part_cost[assembly_list[i][j]];
-                cout << "hi";
         }
     }
+}
 
-    for(int i = 0; i < dependency_cost.size(); ++i)
-        cout << dependency_cost[i] << endl;
+int constructOmnidroid(vector<vector<int>> assembly_list, vector<int> part_cost, vector<int> dependency_cost)
+{
+	int result = 0, n = assembly_list.size();
+
+	// Iterate through last index of dependency_cost_total and compute omnidroid cost
+	for(int i = 0; i < assembly_list[n - 1].size(); ++i)
+		result += dependency_cost[assembly_list[n - 1][i]] + part_cost[assembly_list[n - 1][i]];
+
+	result += part_cost[n - 1];
+	
+	return result;
 }
 
 int main() 
@@ -104,22 +111,20 @@ int main()
 
     // Index = part number, value @ index = part cost
     vector<int> part_cost(n);
+
     // Index = part number, ints @ index = dependencies
     vector<vector<int>> assembly_list(n);
     getAssemblyAndPartsList(input_file, n, part_cost, assembly_list);
+
     // Index = part number, value @ index = cost of all dependencies
     vector<int> dependency_cost;
     getDependencyCost(assembly_list, part_cost, dependency_cost);
 
-	// for(int i = 0; i < assembly_list.size(); ++i) 
-	// {
-	// 	cout << "Index " << i << ": ";
-	// 	for(int j = 0; j < assembly_list[i].size(); j++) 
-	// 		cout << assembly_list[i][j] << " ";
-	// 	cout << endl;
-	// }
+    int omnidroidCost = constructOmnidroid(assembly_list, part_cost, dependency_cost);
 
+    cout << omnidroidCost << endl;
 
-    // for(int i = 0; i < part_cost.size(); ++i)
-	// 	cout << "Index "<< i << ": " << part_cost[i] << endl;
+    input_file.close();
+
+    return 0;
 }
