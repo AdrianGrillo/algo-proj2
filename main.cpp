@@ -1,121 +1,102 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <regex>
 #include <utility>
 #include <vector>
+#include <istream>
+#include <sstream>
 
 using namespace std;
 
-// Omnidroid process
-// 1. Extract n and m
-// 2. Extract pairs to 2d vector
-// 3. Extract singles to 1d vector
-// 4. Loop through 2d vector and reference 1d vector to calculate sprocket cost
+// Global for total number of robots in file
+int totalRobots;
 
-// Get substring and return as int
-int getSubstring(string line, int start, int end) 
+void getParts(ifstream& file, int* n)
 {
-	return stoi(line.substr(start, end));
-}
-
-// Create 2d vector out of int pairs
-vector<vector<int>> getPairs(ifstream& file, int m, int n) 
-{
-	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
 	string line = "";
-	int line_number = 0;
-	bool start = false;
-	vector<vector<int>> result(n - 1);
-	cmatch match;
-	regex pair("\\d\\s\\d");
 
-	// Iterate to line where n and m are declared and start on next line
-	while(getline(file, line) && line_number < m) {
-		// If buffer matches a single, break
-		if(regex_match(line.c_str(), match, regex("\\d")))
-			break;
+	while(getline(file, line)) 
+	{
+        if(!totalRobots)
+            totalRobots = stoi(line);
 
-		if(start != true && regex_match(line.c_str(), match, pair))
-			start = true;
-
-		if(start == true) {
-			// Get basic and intermediate parts
+		if(line.length() >= 3 && line != "omnidroid" && line != "robotomaton") 
+		{
 			int whitespace = line.find(" ");
-			int length = line.length();
+			*n = stoi(line.substr(0, whitespace));
 
-			int basic_part = getSubstring(line, 0, whitespace);
-			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
-			
-			result[basic_part].push_back(intermediate_part);
-			++line_number;
-		}
-	}
-
-	return result;
-}
-
-// Index = part number, value @ index = part cost
-vector<int> getSingles(ifstream& file, int n)
-{
-	// Iterate through single integers - Store sprocket cost for each part in sprocketCounts array
-	string line = "";
-	int line_number = 0;
-	bool start = false;
-	vector<int> result(n);
-	cmatch match;
-	regex single("\\d*"), pair("\\d\\s\\d");
-
-	// Iterate past first single digit since it has nothing to do with omnidroid assembly or else regex will match it
-	while(getline(file, line)) {
-		// Iterate to single ints
-		if(start != true && regex_match(line.c_str(), match, pair))
 			break;
-	}
-
-	while(getline(file, line) && line_number < n) {
-		// Iterate to single ints
-		if(start != true && regex_match(line.c_str(), match, single))
-			start = true;
-
-		// Iterate for as long as there is a single digit on a given line
-		if(start == true) {
-			result[line_number] = stoi(line);
-			++line_number;
 		}
 	}
-
-	return result;
 }
 
-// Actual process of constructing robot from extracted pairs and singles
-int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost)
+void getAssemblyAndPartsList(ifstream& file, int n,  vector<int>& part_cost, vector<vector<int>>& assembly_list) 
 {
-	int result = 0;
-	vector<int> dependencies(assembly.size());
+    // Initialize each vector at result[i] -1, this indicates that part #i isn't dependent on any other part
+	for(int i = 0; i < assembly_list.size(); ++i)
+		assembly_list[i].push_back(-1);
 
-	// Sum dependencies
-	for(int i = 0; i < assembly.size(); ++i)
-		dependencies[i] = assembly[i].size();
+    string line = "";
+	int line_number = 0;
 
-	// Loop through singles
-	for(int i = 0; i < part_cost.size(); ++i)
-		result += part_cost[i];
+    while(getline(file, line)) 
+    {
+        if(line.length() >= 3)
+        {
+        // Get basic and intermediate parts
+        int whitespace = line.find(" ");
+        int length = line.length();
+
+        int basic_part = stoi(line.substr(0, whitespace));;
+        int intermediate_part = stoi(line.substr(whitespace + 1, length - whitespace + 1));
+
+        // If -1 is at the location that a dependency shoud go, clear it before pushing the dependency
+        if(assembly_list[intermediate_part][0] == -1)
+            assembly_list[intermediate_part].clear();
+
+        assembly_list[intermediate_part].push_back(basic_part);
+        } 
+        else
+        {
+            part_cost[line_number] = stoi(line);
+            ++line_number;
+        }
+	}
+}
+
+void getDependencyCost(vector<vector<int>>& assembly_list, vector<int>& part_cost, vector<int>& dependency_cost)
+{
+    // Initialize depency_cost vector to 0
+    for(int i = 0; i < assembly_list.size(); ++i)
+        dependency_cost.push_back(0);
+
+    for(int i = 0; i < assembly_list.size(); ++i) 
+    {
+        if(assembly_list[i][0] != -1) 
+        {
+            for(int j = 0; j < assembly_list[i].size(); ++j)
+                dependency_cost[i] += part_cost[assembly_list[i][j]];
+        }
+    }
+}
+
+int constructOmnidroid(vector<vector<int>> assembly_list, vector<int> part_cost, vector<int> dependency_cost)
+{
+	int result = 0, n = assembly_list.size();
+
+	// Iterate through last index of dependency_cost_total and compute omnidroid cost
+	for(int i = 0; i < assembly_list[n - 1].size(); ++i)
+		result += dependency_cost[assembly_list[n - 1][i]] + part_cost[assembly_list[n - 1][i]];
+
+	result += part_cost[n - 1];
 	
-	// Loop through pairs
-	for(int i = 0; i < assembly.size(); ++i) 
-		// If the vector at assembly[i] has more than one index, add part_cost[i] to result for each index at assembly[i]
-		if(assembly[i].size() > 1)
-			result += dependencies[i] * part_cost[i];
-
 	return result;
 }
 
 int main() 
 {
-	// Open input file
+    // Open input file
 	ifstream input_file;
-
 	input_file.open("input.txt");
 
 	if(!input_file) 
@@ -124,55 +105,26 @@ int main()
 		return 1;
 	}
 
-	string line = "";
-	int n, m;
-	regex pair("\\d*\\s\\d*");
-	cmatch match;
+    // Get n
+	int n;
+	getParts(input_file, &n);
 
-	// Get n and m
-	while(getline(input_file, line)) 
-	{
-		if(regex_match(line.c_str(), match, pair)) 
-		{
-			int whitespace = line.find(" ");
-			int length = line.length();
+    // Index = part number, value @ index = part cost
+    vector<int> part_cost(n);
 
-			n = getSubstring(line, 0, whitespace);
-			m = getSubstring(line, whitespace + 1, length - whitespace - 1);
+    // Index = part number, ints @ index = dependencies
+    vector<vector<int>> assembly_list(n);
+    getAssemblyAndPartsList(input_file, n, part_cost, assembly_list);
 
-			break;
-		}
-	}
+    // Index = part number, value @ index = cost of all dependencies
+    vector<int> dependency_cost;
+    getDependencyCost(assembly_list, part_cost, dependency_cost);
 
-	vector<vector<int>> assembly_list = getPairs(input_file, m, n);
+    int omnidroidCost = constructOmnidroid(assembly_list, part_cost, dependency_cost);
 
-	// Print 2d vector for debugging
-	cout << "Constructed from int pairs" << endl;
-	for(int i = 0; i < assembly_list.size(); ++i) 
-	{
-		cout << "Index " << i << ": ";
-		for(int j = 0; j < assembly_list[i].size(); j++) 
-			cout << assembly_list[i][j] << " ";
-		cout << endl;
-	}
+    cout << omnidroidCost << endl;
 
-	// Seek to beginning of input file
-	input_file.clear();
-	input_file.seekg(0);
+    input_file.close();
 
-	vector<int> sprocketCounts = getSingles(input_file, n);
-
-	// Print singles
-	cout << endl;
-	cout << "Contructed from single ints: " << endl;
-	for(int i = 0; i < sprocketCounts.size(); ++i)
-		cout << "Index "<< i << ": " << sprocketCounts[i] << endl;
-
-	int omnidroidCost = constructOmnidroid(assembly_list, sprocketCounts);
-	cout << endl;
-	cout << "Total omnidroid cost: " << omnidroidCost << endl;
-
-	input_file.close();
-
-	return 0;
+    return 0;
 }
