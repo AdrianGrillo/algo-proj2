@@ -1,1 +1,4 @@
+/.gitignore
 /.vscode/*
+/main.exe
+/main_rough_draft.exe
