@@ -1,14 +1,10 @@
 #include <iostream>
-#include <fstream>
-#include <string>
-#include <regex>
-#include <utility>
 #include <vector>
 #include <tuple>
 
 using namespace std;
 
-
+//Function handles robotomaton part computations
 int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<int> lookupTable){
     int result = 0;
     int children = get<1>(partList[n-1]);
@@ -28,6 +24,7 @@ int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<int> 
 
 }
 
+//Function initializes 1d vector for memoizaztion and calls the contructRobotomaton function
 int robotomatonWrapper(int numStages, vector<tuple <int, int> > assembly){
     vector<int> costs(numStages);
 
