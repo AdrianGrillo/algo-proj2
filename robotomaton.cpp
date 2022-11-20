@@ -1,8 +1,15 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <tuple>
+#include <string>
 
 using namespace std;
+
+int getSubstring(string line, int start, int end) 
+{
+	return stoi(line.substr(start, end));
+}
 
 //Function handles robotomaton part computations
 int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<int> lookupTable){
@@ -37,24 +44,49 @@ int robotomatonWrapper(int numStages, vector<tuple <int, int> > assembly){
 }
 
 
+vector<tuple<int, int>> getRobotomatonParts(ifstream& file, int* numStages)
+{
+    string line = "";
+    vector<tuple<int,int>> answer;
+
+    while(getline(file, line)) 
+    {
+        if (line.length() == 1){
+            *numStages = stoi(line);
+        }
+
+        if(line.length() >= 3 && line != "omnidroid" && line != "robotomaton") 
+        {
+            int whitespace = line.find(" ");
+            int length = line.length();
+
+            int costs = getSubstring(line, 0, whitespace);
+            int stage = getSubstring(line, whitespace + 1, length - whitespace - 1);
+            
+            answer.emplace_back(costs,stage);
+
+        }
+    }
+    return answer;
+}
+
 int main(){
 
+    int numStages = 0;
 
-    vector<tuple<int,int>> test;
+    ifstream input_file;
+    input_file.open("input.txt");
 
-    test.emplace_back(3,0);
+    if(!input_file) 
+    {
+        cout << "Unable to open input file" << endl;
+        return 1;
+    }
 
-    test.emplace_back(11,0);
-
-    test.emplace_back(31,1);
-
-    test.emplace_back(29,2);
-
-    test.emplace_back(5,4);
-
+    vector<tuple<int,int>> test = getRobotomatonParts(input_file, &numStages);
 
     int answer = 0;
-    answer = robotomatonWrapper(5, test);
+    answer = robotomatonWrapper(numStages, test);
     cout << answer;
 
     return answer;
