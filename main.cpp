@@ -84,7 +84,7 @@ int constructOmnidroid(const vector<vector<int>> assembly_list, const vector<int
 {
 	int result = 0, n = assembly_list.size();
 
-	// Iterate through last index of dependency_cost_total and compute omnidroid cost
+	// Iterate through last index of dependency_cost and compute omnidroid cost
 	for(int i = 0; i < assembly_list[n - 1].size(); ++i)
 		result += dependency_cost[assembly_list[n - 1][i]] + part_cost[assembly_list[n - 1][i]];
 
