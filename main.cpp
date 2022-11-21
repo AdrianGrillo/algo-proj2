@@ -64,7 +64,7 @@ void getAssemblyAndPartsList(ifstream& file, int n,  vector<int>& part_cost, vec
 	}
 }
 
-void getDependencyCost(vector<vector<int>>& assembly_list, vector<int>& part_cost, vector<int>& dependency_cost)
+void getDependencyCost(const vector<vector<int>>& assembly_list, const vector<int>& part_cost, vector<int>& dependency_cost)
 {
     // Initialize depency_cost vector to 0
     for(int i = 0; i < assembly_list.size(); ++i)
@@ -80,11 +80,11 @@ void getDependencyCost(vector<vector<int>>& assembly_list, vector<int>& part_cos
     }
 }
 
-int constructOmnidroid(vector<vector<int>> assembly_list, vector<int> part_cost, vector<int> dependency_cost)
+int constructOmnidroid(const vector<vector<int>> assembly_list, const vector<int> part_cost, const vector<int> dependency_cost)
 {
 	int result = 0, n = assembly_list.size();
 
-	// Iterate through last index of dependency_cost_total and compute omnidroid cost
+	// Iterate through last index of dependency_cost and compute omnidroid cost
 	for(int i = 0; i < assembly_list[n - 1].size(); ++i)
 		result += dependency_cost[assembly_list[n - 1][i]] + part_cost[assembly_list[n - 1][i]];
 
@@ -122,7 +122,7 @@ int main()
 
     int omnidroidCost = constructOmnidroid(assembly_list, part_cost, dependency_cost);
 
-    cout << omnidroidCost << endl;
+    cout << "Omnidroid cost: " << omnidroidCost << endl;
 
     input_file.close();
 
