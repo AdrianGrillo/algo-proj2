@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 #include <sstream>
+#include <tuple>
+
 
 using namespace std;
 
@@ -86,7 +88,9 @@ vector<vector<int>> constructAssemblyList(ifstream& file, vector<int> part_cost_
 			int whitespace = line.find(" ");
 			int length = line.length();
 			cout << line << endl;
+			cout << "assembly iterate second if 1st comment basic" << endl;
 			int basic_part = getSubstring(line, 0, whitespace);
+			cout << "assembly iterate second if 1st comment intermed" << endl;
 			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
 
 			cout << "assembly iterate second if 2nd comment" << endl;
@@ -162,12 +166,14 @@ int Omnidroid(ifstream &input){
 	vector<int> part_cost_individual = getSingles(input, n);
 	
 	
+	cout << "assembly list" << endl;
+	vector<vector<int>> assembly_list = constructAssemblyList(input, part_cost_individual, m, n);
+	
 	// Seek to beginning of input file
 	input.clear();
 	input.seekg(0);
 
-	cout << "assembly list" << endl;
-	vector<vector<int>> assembly_list = constructAssemblyList(input, part_cost_individual, m, n);
+	
 
 	cout << "print 1" << endl;
 	// Print 2d vector for debugging
@@ -196,66 +202,70 @@ int Omnidroid(ifstream &input){
 
 }
 
-//INCOMPLETE
-vector<tuple<int, int>> robotomatonPairs(ifstream& file, int m) 
+//Function handles robotomaton part computations
+int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<int> lookupTable){
+    int result = 0;
+    int children = get<1>(partList[n-1]);
+	
+	if (lookupTable[n-1] == 0){
+
+		lookupTable[n-1] += get<0>(partList[n-1]);
+        result += get<0>(partList[n-1]);
+
+		for(int i = 0; i < children+1; i ++){
+			lookupTable[n-i] += constructRobotomaton(n-i, partList, lookupTable);
+            result += constructRobotomaton(n-i, partList, lookupTable);
+		}
+	}
+
+    return result;
+
+}
+
+vector<tuple<int, int>> getRobotomatonParts(ifstream& file, int* numStages)
 {
-	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
-	string line = "";
-	int line_number = 0;
-	bool start = false;
-	vector<tuple<int, int>> result(m);
-	cmatch match;
-	regex pair("\\d\\s\\d");
+	cout << "getrobotparts" << endl;
+    string line = "";
+    vector<tuple<int,int>> answer;
 
-	// Iterate to line where n and m are declared and start on next line
-	while(getline(file, line) && line_number < m) {
-		// If buffer matches a single, skip
-		if(regex_match(line.c_str(), match, regex("\\d")))
-			continue; 
-
-		if(start != true && regex_match(line.c_str(), match, pair))
-			start = true;
-
-		if(start == true) {
-			// Get basic and intermediate parts
-			int whitespace = line.find(" ");
-			int length = line.length();
-
-			int cost = getSubstring(line, 0, whitespace);
-			int stage = getSubstring(line, whitespace + 1, length - whitespace - 1);
-			
-			result.emplace_back(cost, stage);
-
-			++line_number;
+    while(getline(file, line)) 
+    {
+		cout << "getrobo line " << line << endl;
+		if (line.empty()) {
+			break;
 		}
-	}
+        if (line.length() == 1){
+            *numStages = stoi(line);
+        }
 
-	return result;
+        if(line.length() >= 3 && line != "omnidroid" && line != "robotomaton") 
+        {
+            int whitespace = line.find(" ");
+            int length = line.length();
+
+            int costs = getSubstring(line, 0, whitespace);
+            int stage = getSubstring(line, whitespace + 1, length - whitespace - 1);
+            
+            answer.emplace_back(costs,stage);
+
+        }
+    }
+    return answer;
 }
 
-int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<vector<int>> lookupTable){
-	
-	if (lookupTable[get<0>(partList[n])][get<1>(partList[n])] == -1){
 
-		lookupTable[get<0>(partList[n])][get<1>(partList[n])] += get<0>(partList[n]);
-
-		for(int i = 0; i < n; i ++){
-			lookupTable[get<0>(partList[n-i])][get<1>(partList[n-i])] += constructRobotomaton(n+i, partList, lookupTable);
-		}
-	}
-	
-	return lookupTable[get<0>(partList[n])][get<1>(partList[n])];
-
-}
-
-int robotomatonWrapper(int numStages, vector<vector<int>> costs){
-	vector<tuple <int, int> > parts;
+//Function initializes 1d vector for memoizaztion and calls the contructRobotomaton function
+int robotomatonWrapper(ifstream &input){
+	cout << "wrapper start" << endl;
+	int numStages = 0;
+	vector<tuple<int, int>> assembly = getRobotomatonParts(input, &numStages);
+    vector<int> costs(numStages);
 
 	for(int i = 0; i < numStages; i++){
-		costs[get<0>(parts[i])][get<1>(parts[i])] = -1;
+        cout << get<0>(assembly[i]) << ' '<< get<1>(assembly[i]) << endl;
+		costs[i] = 0;
 	}
-
-	return constructRobotomaton(numStages, parts, costs);
+	return constructRobotomaton(numStages, assembly, costs);
 
 }
 
@@ -289,26 +299,38 @@ int main()
 	cout << "robots: " << robots << endl;
 
 	//making the required number of robots
-	ofstream output_file;
-	output_file.open("output.txt");
+	// ofstream output_file;
+	// output_file.open("output.txt", ios::out);
+	// if (output_file.is_open()) {
 	for(int i = 0; i < robots; ++i){
 		getline(input_file, line);
+		if (line.empty()) {
+			getline(input_file, line);
+		}
+		cout << line << endl;
 		if (omni.compare(line) == 0) {
 			cout << "omnidroid" << endl;
 			//call omnidroid funct
 			totalSprockets = Omnidroid(input_file);
 			cout << totalSprockets << endl;
-			output_file << totalSprockets << endl;
+			//output_file << totalSprockets << endl;
 		} else if(robo.compare(line) == 0) {
 			cout << "robotomaton" << endl;
 			//call robotomaton funct
-			//output_file << robotomatonWrapper() << endl;
-
+			totalSprockets = robotomatonWrapper(input_file);
+			cout << totalSprockets << endl;
+			//output_file << totalSprockets << endl;
+			}
 		}
-
-	}
+		//output_file.close();
+  	// } else {
+	// 	cout << "Unable to open file";
+	// 	return 1;
+	// }
+  	
+	
 
 	input_file.close();
-	output_file.close();
+
 	return 0;
 }
