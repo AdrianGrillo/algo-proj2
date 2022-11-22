@@ -11,14 +11,6 @@
 
 using namespace std;
 
-// Omnidroid process
-// 1. Extract n and m
-// 2. Extract pairs to 2d vector
-// 3. Extract singles to 1d vector
-// 4. Loop through 2d vector and reference 1d vector to calculate sprocket cost
-
-// Global dependency cost table
-vector<int> dependency_cost_total;
 
 // Get substring and return as int
 int getSubstring(string line, int start, int end) 
@@ -26,180 +18,110 @@ int getSubstring(string line, int start, int end)
 	return stoi(line.substr(start, end));
 }
 
-
-void getPartsAndDependencies(ifstream& file, int* n, int* m)
+void getParts(ifstream& file, int* n)
 {
 	string line = "";
-	regex pair("\\d*\\s\\d*");
-	cmatch match;
 
-	// Get n and m
 	while(getline(file, line)) 
 	{
-		if(regex_match(line.c_str(), match, pair)) 
+
+		if(line.length() >= 3) 
 		{
 			int whitespace = line.find(" ");
-			int length = line.length();
-
-			*n = getSubstring(line, 0, whitespace);
-			*m = getSubstring(line, whitespace + 1, length - whitespace - 1);
+			*n = stoi(line.substr(0, whitespace));
 
 			break;
 		}
 	}
 }
 
-// Create 2d vector out of int pairs
-vector<vector<int>> constructAssemblyList(ifstream& file, vector<int> part_cost_individual, int m, int n) 
+void getAssemblyAndPartsList(ifstream& file, int n,  vector<int>& part_cost, vector<vector<int>>& assembly_list) 
 {
-	cout << "assembly start" << endl;
-	// Iterate through integer pairs - Store part number at that index with sprocket cost as value at index
+	// Initialize each vector at result[i] -1, this indicates that part #i isn't dependent on any other part
+	for(int i = 0; i < (int) assembly_list.size(); ++i)
+		assembly_list[i].push_back(-1);
+
 	string line = "";
 	int line_number = 0;
-	bool start = false;
-	vector<vector<int>> result(n);
-	cmatch match;
-	regex pair("\\d\\s\\d");
 
-	cout << "assembly initialize" << endl;
-	// Initialize nested vectors to -1 and global lookup table to 0
-	for(int i = 0; i < result.size(); ++i){
-		// -1 indicates that part i isn't dependent on any other part
-		result[i].push_back(-1);
-		dependency_cost_total.push_back(0);
-	}
-
-	cout << "assembly iterate" << endl;
-	// Iterate to line where n and m are declared and start on next line
-	while(getline(file, line)) {
-		if(start != true && regex_match(line.c_str(), match, pair))
-			cout << "assembly iterate start = true" << endl;
-			start = true;
-
-		if(start == true) 
+	while(getline(file, line)) 
+	{
+		if(line.empty()) {
+			break;
+		}
+		if(line.length() >= 3)
 		{
-			cout << "assembly iterate second if beginning" << endl;
-			++line_number;
-			if(line_number > m)
-				break;
-
 			// Get basic and intermediate parts
-			cout << "assembly iterate second if 1st comment" << endl;
 			int whitespace = line.find(" ");
 			int length = line.length();
-			cout << line << endl;
-			cout << "assembly iterate second if 1st comment basic" << endl;
-			int basic_part = getSubstring(line, 0, whitespace);
-			cout << "assembly iterate second if 1st comment intermed" << endl;
-			int intermediate_part = getSubstring(line, whitespace + 1, length - whitespace - 1);
 
-			cout << "assembly iterate second if 2nd comment" << endl;
+			int basic_part = stoi(line.substr(0, whitespace));;
+			int intermediate_part = stoi(line.substr(whitespace + 1, length - whitespace + 1));
+
 			// If -1 is at the location that a dependency shoud go, clear it before pushing the dependency
-			if(result[intermediate_part][0] == -1)
-				result[intermediate_part].clear();
+			if(assembly_list[intermediate_part][0] == -1)
+				assembly_list[intermediate_part].clear();
 
-			result[intermediate_part].push_back(basic_part);
-			dependency_cost_total[intermediate_part] += part_cost_individual[basic_part];
+			assembly_list[intermediate_part].push_back(basic_part);
+			} 
+		
+			
+			else
+			{
+				part_cost[line_number] = stoi(line);
+				++line_number;
 		}
 	}
-
-	cout << "assembly last for" << endl;
-	for(int i = 0; i < dependency_cost_total.size(); ++i)
-		cout << dependency_cost_total[i] << endl;
-
-	return result;
 }
 
-// Index = part number, value @ index = part cost
-vector<int> getSingles(ifstream& file, int n)
+void getDependencyCost(const vector<vector<int>>& assembly_list, const vector<int>& part_cost, vector<int>& dependency_cost)
 {
-	// Iterate through single integers - Store sprocket cost for each part in sprocketCounts array
-	string line = "";
-	int line_number = 0;
-	bool start = false;
-	vector<int> result(n);
-	cmatch match;
-	regex single("\\d*"), pair("\\d\\s\\d");
+	// Initialize depency_cost vector to 0
+	for(int i = 0; i < (int) assembly_list.size(); ++i)
+		dependency_cost.push_back(0);
 
-	// Iterate past first single digit since it has nothing to do with omnidroid assembly or else regex will match it
-	while(getline(file, line)) {
-		// Iterate to single ints
-		if(start != true && regex_match(line.c_str(), match, pair))
-			break;
-	}
-
-	while(getline(file, line) && line_number < n) {
-		// Iterate to single ints
-		if(start != true && regex_match(line.c_str(), match, single))
-			start = true;
-
-		// Iterate for as long as there is a single digit on a given line
-		if(start == true) {
-			result[line_number] = stoi(line);
-			++line_number;
+	for(int i = 0; i < (int) assembly_list.size(); ++i) 
+	{
+		if(assembly_list[i][0] != -1) 
+		{
+			for(int j = 0; j < (int) assembly_list[i].size(); ++j)
+				dependency_cost[i] += part_cost[assembly_list[i][j]];
 		}
 	}
-
-	return result;
 }
 
-// Actual process of constructing robot from extracted pairs and singles
-int constructOmnidroid(vector<vector<int>> assembly, vector<int> part_cost_individual)
+int constructOmnidroid(const vector<vector<int>> assembly_list, const vector<int> part_cost, const vector<int> dependency_cost)
 {
-	int result = 0, n = assembly.size();
+	int result = 0, n = assembly_list.size();
 
-	// Iterate through last index of dependency_cost_total and compute omnidroid cost
-	for(int i = 0; i < assembly[n - 1].size(); ++i)
-		result += dependency_cost_total[assembly[n - 1][i]] + part_cost_individual[assembly[n - 1][i]];
+	// Iterate through last index of dependency_cost and compute omnidroid cost
+	for(int i = 0; i < (int) assembly_list[n - 1].size(); ++i)
+		result += dependency_cost[assembly_list[n - 1][i]] + part_cost[assembly_list[n - 1][i]];
 
-	result += part_cost_individual[n - 1];
+	result += part_cost[n - 1];
 	
 	return result;
 }
 
 int Omnidroid(ifstream &input){
-	int n, m;
-	cout << "getParts" << endl;
-	getPartsAndDependencies(input, &n, &m);
+	// Get n
+	int n;
+	getParts(input, &n);
 
-	cout << "getSingles" << endl;
-	vector<int> part_cost_individual = getSingles(input, n);
-	
-	
-	cout << "assembly list" << endl;
-	vector<vector<int>> assembly_list = constructAssemblyList(input, part_cost_individual, m, n);
-	
-	// Seek to beginning of input file
-	input.clear();
-	input.seekg(0);
+	// Index = part number, value @ index = part cost
+	vector<int> part_cost(n);
 
-	
+	// Index = part number, ints @ index = dependencies
+	vector<vector<int>> assembly_list(n);
+	getAssemblyAndPartsList(input, n, part_cost, assembly_list);
 
-	cout << "print 1" << endl;
-	// Print 2d vector for debugging
-	cout << "Constructed from int pairs" << endl;
-	for(int i = 0; i < assembly_list.size(); ++i) 
-	{
-		cout << "Index " << i << ": ";
-		for(int j = 0; j < assembly_list[i].size(); j++) 
-			cout << assembly_list[i][j] << " ";
-		cout << endl;
-	}
+	// Index = part number, value @ index = cost of all dependencies
+	vector<int> dependency_cost;
+	getDependencyCost(assembly_list, part_cost, dependency_cost);
 
-	cout << "print 2" << endl;
-
-	// Print singles
-	cout << endl;
-	cout << "Contructed from single ints: " << endl;
-	for(int i = 0; i < part_cost_individual.size(); ++i)
-		cout << "Index "<< i << ": " << part_cost_individual[i] << endl;
-
-	int omnidroidCost = constructOmnidroid(assembly_list, part_cost_individual);
-	cout << endl;
-	cout << "Total omnidroid cost: " << omnidroidCost << endl;
+	int omnidroidCost = constructOmnidroid(assembly_list, part_cost, dependency_cost);
 
 	return omnidroidCost;
-
 }
 
 //Function handles robotomaton part computations
@@ -224,13 +146,11 @@ int constructRobotomaton(int n, vector<tuple <int, int> > partList, vector<int> 
 
 vector<tuple<int, int>> getRobotomatonParts(ifstream& file, int* numStages)
 {
-	cout << "getrobotparts" << endl;
     string line = "";
     vector<tuple<int,int>> answer;
 
     while(getline(file, line)) 
     {
-		cout << "getrobo line " << line << endl;
 		if (line.empty()) {
 			break;
 		}
@@ -238,7 +158,7 @@ vector<tuple<int, int>> getRobotomatonParts(ifstream& file, int* numStages)
             *numStages = stoi(line);
         }
 
-        if(line.length() >= 3 && line != "omnidroid" && line != "robotomaton") 
+        if(line.length() >= 3) 
         {
             int whitespace = line.find(" ");
             int length = line.length();
@@ -256,13 +176,11 @@ vector<tuple<int, int>> getRobotomatonParts(ifstream& file, int* numStages)
 
 //Function initializes 1d vector for memoizaztion and calls the contructRobotomaton function
 int robotomatonWrapper(ifstream &input){
-	cout << "wrapper start" << endl;
 	int numStages = 0;
 	vector<tuple<int, int>> assembly = getRobotomatonParts(input, &numStages);
     vector<int> costs(numStages);
 
 	for(int i = 0; i < numStages; i++){
-        cout << get<0>(assembly[i]) << ' '<< get<1>(assembly[i]) << endl;
 		costs[i] = 0;
 	}
 	return constructRobotomaton(numStages, assembly, costs);
@@ -296,37 +214,35 @@ int main()
 	getline(input_file, line);
 	robotnum << line;
 	robotnum >> robots;
-	cout << "robots: " << robots << endl;
 
 	//making the required number of robots
-	// ofstream output_file;
-	// output_file.open("output.txt", ios::out);
-	// if (output_file.is_open()) {
-	for(int i = 0; i < robots; ++i){
-		getline(input_file, line);
-		if (line.empty()) {
+	ofstream output_file;
+	output_file.open("output.txt");
+	ifstream test("output.txt");
+	
+	if (output_file.is_open()) {
+		for(int i = 0; i < robots; ++i){
 			getline(input_file, line);
-		}
-		cout << line << endl;
-		if (omni.compare(line) == 0) {
-			cout << "omnidroid" << endl;
-			//call omnidroid funct
-			totalSprockets = Omnidroid(input_file);
-			cout << totalSprockets << endl;
-			//output_file << totalSprockets << endl;
-		} else if(robo.compare(line) == 0) {
-			cout << "robotomaton" << endl;
-			//call robotomaton funct
-			totalSprockets = robotomatonWrapper(input_file);
-			cout << totalSprockets << endl;
-			//output_file << totalSprockets << endl;
+			if (line.empty()) {
+				getline(input_file, line);
 			}
-		}
-		//output_file.close();
-  	// } else {
-	// 	cout << "Unable to open file";
-	// 	return 1;
-	// }
+			if (omni.compare(line) == 0) {
+				//call omnidroid funct
+				totalSprockets = Omnidroid(input_file);
+				cout << totalSprockets << endl;
+				output_file << totalSprockets << endl;
+			} else if(robo.compare(line) == 0) {
+				//call robotomaton funct
+				totalSprockets = robotomatonWrapper(input_file);
+				cout << totalSprockets << endl;
+				output_file << totalSprockets << endl;
+				}
+			}
+		output_file.close();
+  	} else {
+		cout << "Unable to open file";
+		return 1;
+	}
   	
 	
 
